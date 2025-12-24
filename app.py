@@ -8,7 +8,7 @@ st.set_page_config(
     page_title="BUÜ | Bardenpho Optimizer",
     page_icon="🌊",
     layout="wide",
-    initial_sidebar_state="extended"
+    initial_sidebar_state="expanded"  # FIXED: Changed from "extended" to "expanded"
 )
 
 # --- 2. ADVANCED CSS OVERRIDES (Contrast & UI Fixes) ---
@@ -198,7 +198,7 @@ else:
             <h3 style='color: #0c284d; font-weight: 900; margin-top:0;'>Ototrof Washout (Yıkanma) Fenomeni</h3>
             <p style='font-size: 1.1rem;'>Biyolojik azot gideriminde en kritik basamak nitrifikasyondur. Bu süreci yürüten ototrof bakteriler, sıcaklık değişimlerine karşı heterotroflara oranla ekstrem düzeyde duyarlıdır. 
             <b>Arrhenius</b> denklemine göre, su sıcaklığı 20°C'den 10°C'ye düştüğünde nitrifikasyon hızı tam olarak <b>%50.4 oranında</b> yavaşlar.</p>
-            <p style='font-size: 1.1rem;'><b>Washout:</b> Eğer sistemde tutulan bakteri miktarı (SRT), bakterilerin bu yavaşlayan üreme hızını dengeleyemezse, popülasyon sistemden fiziksel olarak atılır ve amonyak giderimi durur.</p>
+            <p style='font-size: 1.1rem;'><b>Washout:</b> Eğer sistemde tutulan bakteri miktarı (SRT), bakterilerin bu yavaşlayan üreme hızından daha düşükse, popülasyon sistemden fiziksel olarak atılır ve amonyak giderimi durur.</p>
             <hr style='opacity:0.1; margin: 30px 0;'>
             <h3 style='color: #0c284d; font-weight: 900;'>Neden Dinamik Simülasyon?</h3>
             <p style='font-size: 1.1rem;'>Statik modeller sadece son durumu gösterir. Ancak <b>Dinamik Simülasyon (ASM1 & RK4)</b>;</p>
