@@ -9,11 +9,36 @@ st.set_page_config(
     layout="wide"
 )
 
-# Custom Styling to match a professional report look
+# Enhanced Styling to fix text visibility issues
 st.markdown("""
     <style>
+    /* Main Background */
     .main { background-color: #f8fafc; }
-    .stMetric { background-color: #ffffff; padding: 15px; border-radius: 15px; border: 1px solid #e2e8f0; }
+    
+    /* Metric Card Styling */
+    [data-testid="stMetric"] {
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 15px;
+        border: 1px solid #cbd5e1;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Darken Metric Labels (Fixing the low contrast) */
+    [data-testid="stMetricLabel"] p {
+        color: #334155 !important;
+        font-weight: 700 !important;
+        font-size: 0.9rem !important;
+        text-transform: uppercase;
+    }
+    
+    /* Make Metric Values Pop */
+    [data-testid="stMetricValue"] div {
+        color: #0f172a !important;
+        font-weight: 800 !important;
+    }
+
+    /* Sidebar background */
     div[data-testid="stSidebar"] { background-color: #f1f5f9; }
     </style>
     """, unsafe_allow_html=True)
@@ -120,14 +145,20 @@ st.subheader("Mühendislik Fakültesi - Bardenpho Dinamik Proses Simülatörü")
 with st.spinner('Hesaplanıyor...'):
     data = run_simulation(srt_val, Inf_NH4=nh4_inf)
 
-# Metrics
+# Metrics - Updated with better contrast styling
+st.markdown('<div style="margin-bottom: 25px;"></div>', unsafe_allow_html=True)
 col1, col2, col3 = st.columns(3)
 final_tn = data[-1, 4]
-col1.metric("Final TN", f"{final_tn:.2f} mg/L")
-col2.metric("Final NH4", f"{data[-1, 2]:.2f} mg/L")
-col3.metric("Final NO3", f"{data[-1, 3]:.2f} mg/L")
+
+with col1:
+    st.metric(label="Final TN (Total Nitrogen)", value=f"{final_tn:.2f} mg/L")
+with col2:
+    st.metric(label="Final NH4-N (Ammonium)", value=f"{data[-1, 2]:.2f} mg/L")
+with col3:
+    st.metric(label="Final NO3-N (Nitrate)", value=f"{data[-1, 3]:.2f} mg/L")
 
 # --- 5. PLOTTING ---
+st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
 fig, ax = plt.subplots(figsize=(12, 6))
 
 # Highlight Winter Zone
