@@ -1,29 +1,86 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
+import base64
 
-# --- 1. GENEL SAYFA AYARLARI ---
+# --- 1. PAGE CONFIGURATION ---
 st.set_page_config(
     page_title="BUÜ Bardenpho Akademik Platformu",
     page_icon="🎓",
     layout="wide"
 )
 
-# Profesyonel Görünüm İçin CSS
+# --- 2. CUSTOM CSS (Modern UI) ---
 st.markdown("""
     <style>
+    /* Ana Arkaplan */
     .main { background-color: #f8fafc; }
-    [data-testid="stMetric"] {
-        background-color: #ffffff; padding: 20px; border-radius: 15px; border: 1px solid #cbd5e1;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    
+    /* Yan Menü (Sidebar) Tasarımı */
+    [data-testid="stSidebar"] {
+        background-color: #003c71; /* Uludağ Üni Laciverti */
+        color: white;
     }
-    [data-testid="stMetricLabel"] p { color: #334155 !important; font-weight: 700 !important; }
+    
+    /* Sidebar başlıkları */
+    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
+        color: white !important;
+    }
+    
+    /* Radyo Butonlarını Modern Menüye Çevirme */
+    div[data-testid="stSidebarUserContent"] .stRadio > div {
+        background-color: transparent;
+        border: none;
+    }
+    
+    div[data-testid="stSidebarUserContent"] .stRadio label {
+        background-color: rgba(255, 255, 255, 0.05);
+        color: white !important;
+        padding: 12px 20px;
+        border-radius: 12px;
+        margin-bottom: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+        display: block;
+        cursor: pointer;
+    }
+    
+    div[data-testid="stSidebarUserContent"] .stRadio label:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+        transform: translateX(5px);
+    }
+    
+    div[data-testid="stSidebarUserContent"] .stRadio div[role="radiogroup"] > label[data-checked="true"] {
+        background-color: #ffffff !important;
+        color: #003c71 !important;
+        font-weight: bold !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Metric Kartları */
+    [data-testid="stMetric"] {
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 20px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+    [data-testid="stMetricLabel"] p { color: #64748b !important; font-weight: 700 !important; text-transform: uppercase; letter-spacing: 0.5px; }
     [data-testid="stMetricValue"] div { color: #0f172a !important; font-weight: 800 !important; }
-    .report-text { font-family: 'serif'; font-size: 1.1rem; line-height: 1.6; color: #1e293b; }
+
+    /* Rapor Metni */
+    .report-card {
+        background-color: white;
+        padding: 40px;
+        border-radius: 25px;
+        border: 1px solid #e2e8f0;
+        line-height: 1.8;
+        font-family: 'Inter', sans-serif;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. FİZİK MOTORU (ASM1 & RK4) ---
+# --- 3. THE PHYSICS ENGINE (Strictly simulation.py) ---
 P = {
     "mu_max_A": 0.75, "mu_max_H": 4.0, "b_A": 0.05, "b_H": 0.4,
     "K_NH": 1.0, "K_S": 10.0, "K_OH": 0.2, "K_OA": 0.5, "K_NO": 0.5,
@@ -49,7 +106,6 @@ def run_simulation(SRT_val, Inf_NH4=50.0):
     Inf_S = 300.0
     states = [np.array([120.0, 2500.0, Inf_NH4, 2.0, 50.0]) for _ in range(4)]
     
-    # Warmup (5 Days)
     for _ in range(int(5.0/dt)):
         X_RAS_BA, X_RAS_H = states[3][0]*(1+R)/R, states[3][1]*(1+R)/R
         new_states = [s.copy() for s in states]
@@ -72,7 +128,6 @@ def run_simulation(SRT_val, Inf_NH4=50.0):
             new_states[j][1] -= (1/SRT_val)*states[j][1]*dt
         states = [np.maximum(s, 1e-4) for s in new_states]
 
-    # Recorded Simulation
     history = []
     for i in range(int(days/dt)):
         t = i * dt
@@ -101,82 +156,102 @@ def run_simulation(SRT_val, Inf_NH4=50.0):
             history.append([t, T, states[3][2], states[3][3], states[3][2]+states[3][3]])
     return np.array(history)
 
-# --- 3. NAVİGASYON VE MENÜ ---
-st.sidebar.image("https://upload.wikimedia.org/wikipedia/tr/e/eb/Bursa_Uluda%C4%9F_%C3%9Cniversitesi_Logosu.png", width=100)
-st.sidebar.title("Navigasyon")
-app_page = st.sidebar.radio("Sayfa Seçiniz:", ["Simülasyon Paneli", "Teorik Arkaplan ve Rapor"])
-
-# --- SAYFA 1: SİMÜLASYON ---
-if app_page == "Simülasyon Paneli":
-    st.title("Bardenpho Dinamik Simülatörü")
-    st.sidebar.header("İşletme Kontrolleri")
-    srt_val = st.sidebar.slider("Çamur Yaşı (SRT) [Gün]", 3.0, 30.0, 15.0, step=0.5)
-    nh4_inf = st.sidebar.slider("Giriş NH4-N [mg/L]", 20.0, 100.0, 50.0, step=1.0)
+# --- 4. NAVIGATION LOGIC ---
+with st.sidebar:
+    st.markdown("""<div style='text-align: center; padding: 20px 0;'>
+        <h2 style='color: white; margin-bottom: 0;'>BUÜ</h2>
+        <p style='color: rgba(255,255,255,0.6); font-size: 0.8rem;'>MÜHENDİSLİK FAKÜLTESİ</p>
+    </div>""", unsafe_allow_html=True)
     
-    with st.spinner('Simülasyon yürütülüyor...'):
+    st.markdown("---")
+    
+    # Modern Pill Navigation
+    page = st.radio(
+        "MENÜ",
+        ["📊 SİMÜLASYON PANELİ", "📄 TEORİK ARKA PLAN"],
+        label_visibility="collapsed"
+    )
+    
+    st.markdown("---")
+    
+    if page == "📊 SİMÜLASYON PANELİ":
+        st.header("KONTROLLER")
+        srt_val = st.slider("Çamur Yaşı (SRT) [Gün]", 3.0, 30.0, 15.0, step=0.5)
+        nh4_inf = st.slider("Giriş NH4-N [mg/L]", 20.0, 100.0, 50.0, step=1.0)
+        st.info("Kış geçişi 15. günde başlar.")
+
+# --- 5. PAGE ROUTING ---
+
+if page == "📊 SİMÜLASYON PANELİ":
+    st.markdown("<h1 style='color: #0f172a;'>Bardenpho Dinamik Analiz Dashboard</h1>", unsafe_allow_html=True)
+    
+    with st.spinner('Simülasyon hesaplanıyor...'):
         data = run_simulation(srt_val, Inf_NH4=nh4_inf)
 
+    # Metrics Row
     col1, col2, col3 = st.columns(3)
     final_tn = data[-1, 4]
-    with col1: st.metric("Final TN", f"{final_tn:.2f} mg/L")
-    with col2: st.metric("Final NH4", f"{data[-1, 2]:.2f} mg/L")
-    with col3: st.metric("Final NO3", f"{data[-1, 3]:.2f} mg/L")
+    with col1: st.metric("NİHAİ TOPLAM AZOT", f"{final_tn:.2f} mg/L")
+    with col2: st.metric("NİHAİ AMONYUM", f"{data[-1, 2]:.2f} mg/L")
+    with col3: st.metric("NİHAİ NİTRAT", f"{data[-1, 3]:.2f} mg/L")
 
-    fig, ax = plt.subplots(figsize=(12, 6))
-    ax.axvspan(15, 40, color='lightgrey', alpha=0.3, label='Kış (10°C)')
-    ax.plot(data[:,0], data[:,2], 'r', label='NH4', linewidth=1.5)
-    ax.plot(data[:,0], data[:,3], 'b--', label='NO3', linewidth=1.5)
-    ax.plot(data[:,0], data[:,4], 'k', linewidth=3.0, label='TN')
-    ax.axhline(8.0, color='orange', linestyle=':', label='Limit (8 mg/L)')
-    ax.set_title(f"Dinamik Analiz (SRT: {srt_val} d)", fontsize=14, fontweight='bold')
-    ax.set_xlabel("Gün")
-    ax.set_ylabel("mg/L")
-    ax.legend()
+    # Chart Section
+    st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
+    fig, ax = plt.subplots(figsize=(12, 6), facecolor='#ffffff')
+    ax.set_facecolor('#ffffff')
+    ax.axvspan(15, 40, color='#f1f5f9', alpha=0.8, label='Kış Durumu (10°C)')
+    ax.plot(data[:,0], data[:,2], color='#e11d48', label='Amonyum (NH4)', linewidth=2)
+    ax.plot(data[:,0], data[:,3], color='#2563eb', linestyle='--', label='Nitrat (NO3)', linewidth=2)
+    ax.plot(data[:,0], data[:,4], color='#0f172a', linewidth=3.5, label='Toplam Azot (TN)')
+    ax.axhline(8.0, color='#f59e0b', linestyle=':', linewidth=2, label='Limit (8 mg/L)')
+
+    ax.set_title(f"Zamana Bağlı Konsantrasyon Değişimi (SRT: {srt_val} d)", fontsize=14, fontweight='bold', pad=20)
+    ax.set_xlabel("Zaman (Gün)", fontsize=10, color='#64748b')
+    ax.set_ylabel("Konsantrasyon (mg/L)", fontsize=10, color='#64748b')
+    ax.grid(True, linestyle='--', alpha=0.1)
+    ax.legend(frameon=False, loc='upper right')
+    
     st.pyplot(fig)
 
     if final_tn > 8:
-        st.error(f"Limit Aşımı! TN: {final_tn:.2f} mg/L")
+        st.error(f"⚠️ KRİTİK: Deşarj limiti aşıldı! (TN: {final_tn:.2f})")
     else:
-        st.success(f"Limitlere Uygun. TN: {final_tn:.2f} mg/L")
+        st.success(f"✅ SİSTEM STABİL: Deşarj limitleri dahilinde. (TN: {final_tn:.2f})")
 
-# --- SAYFA 2: TEORİK ARKA PLAN ---
 else:
-    st.title("📄 Proje Raporu ve Teorik Arkaplan")
+    # --- THEORY PAGE ---
+    st.markdown("<h1 style='color: #0f172a;'>📄 Proje Raporu ve Akademik Arka Plan</h1>", unsafe_allow_html=True)
     
-    st.markdown("""
-    ### T.C. Bursa Uludağ Üniversitesi - Mühendislik Fakültesi
-    **Proje:** Mevsimsel Sıcaklık Geçişlerinin 4-Kademeli Bardenpho Prosesinde Analizi
+    with st.container():
+        st.markdown("""
+        <div class="report-card">
+            <h3>Mevsimsel Sıcaklık Geçişlerinin Analizi</h3>
+            <p>Bu çalışma, <b>Bursa Uludağ Üniversitesi Mühendislik Fakültesi</b> bünyesinde yürütülen ileri biyolojik arıtım optimizasyonu çalışmaları kapsamında geliştirilmiştir.</p>
+            <hr>
+            <h4>ASM1 ve RK4 Entegrasyonu</h4>
+            <p>Sistem dinamiği, Uluslararası Su Derneği (IWA) tarafından standartlaştırılan <b>Aktif Çamur Modeli No. 1 (ASM1)</b> üzerine kurgulanmıştır. 
+            Dinamik geçişlerin (20°C → 10°C) hassasiyeti, <b>4. Derece Runge-Kutta</b> algoritması kullanılarak Python ortamında çözülmüştür.</p>
+            <h4>Ototrof Washout Kinetiği</h4>
+            <p>Ototrof bakteriler, sıcaklık düşüşlerine heterotroflara oranla çok daha duyarlıdır. Sıcaklık 20°C'den 10°C'ye düştüğünde nitrifikasyon hızı 
+            Arrhenius denklemi uyarınca yaklaşık %50 oranında azalır. Bu durum, Çamur Yaşı (SRT) kritik bir eşiğin altına düştüğünde sistemin 
+            tamamen çökmesine (washout) neden olur.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+    st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
     
-    ---
-    #### 1. Giriş ve Amaç
-    Biyolojik azot giderimi, ototrof nitrifikasyon bakterilerinin sıcaklık hassasiyeti nedeniyle kış aylarında risk altına girmektedir. 
-    Bu çalışma, **Aktif Çamur Modeli No. 1 (ASM1)** kullanarak 20°C'den 10°C'ye düşen sıcaklığın sistem üzerindeki dinamik etkisini 
-    modellemeyi amaçlar.
-    
-    #### 2. Metot: RK4 Algoritması
-    Simülasyonda kullanılan adi diferansiyel denklemler (ODE), biyokimyasal reaksiyonların doğrusal olmayan yapısı nedeniyle 
-    **4. Derece Runge-Kutta (RK4)** algoritması ile çözülmüştür. Bu yöntem, kütle korunumunu en yüksek hassasiyetle sağlar.
-    
-    #### 3. Biyokinetik Parametreler
-    Arrhenius katsayısı ($\theta = 1.072$) uyarınca, sıcaklık 20°C'den 10°C'ye düştüğünde nitrifikasyon hızı yaklaşık %50 azalır. 
-    Bu azalma, sistemde yeterli Çamur Yaşı (SRT) sağlanmadığı takdirde "Washout" (yıkanma) olayına sebebiyet verir.
-    
-    ---
-    """)
-    
-    # PDF İndirme Bölümü
-    st.info("💡 Çalışmanın tam metnini (PDF) aşağıdaki butona tıklayarak indirebilirsiniz.")
-    
+    # PDF Download Section
+    st.subheader("İndirilebilir İçerik")
     try:
         with open("rapor.pdf", "rb") as file:
-            btn = st.download_button(
-                label="📥 Raporu PDF Olarak İndir",
+            st.download_button(
+                label="📥 PROJE RAPORUNU PDF OLARAK İNDİR",
                 data=file,
-                file_name="Bardenpho_Dinamik_Analiz_Raporu.pdf",
-                mime="application/octet-stream"
+                file_name="BUU_Bardenpho_Analiz_Raporu.pdf",
+                mime="application/pdf",
+                use_container_width=True
             )
     except FileNotFoundError:
-        st.warning("⚠️ 'rapor.pdf' dosyası GitHub deponuzda bulunamadı. Lütfen PDF dosyasını yükleyip adını 'rapor.pdf' olarak değiştiriniz.")
+        st.warning("⚠️ 'rapor.pdf' dosyası GitHub deponuzda bulunamadı. Lütfen PDF dosyanızı yükleyiniz.")
 
-st.divider()
-st.caption("© 2024 BUÜ Çevre Mühendisliği - Akademik Simülasyon Projesi")
+st.markdown("<br><hr><center><p style='color: #94a3b8; font-size: 0.7rem;'>BUÜ Çevre Mühendisliği Dinamik Simülasyon Portalı © 2024</p></center>", unsafe_allow_html=True)
