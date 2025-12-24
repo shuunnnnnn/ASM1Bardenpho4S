@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
+import base64
 from engine import run_simulation  # Import the modular physics engine
 
 # --- 1. PAGE CONFIGURATION ---
@@ -10,21 +11,36 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- 2. CUSTOM CSS (Modern UI with High Contrast) ---
+# --- 2. CUSTOM CSS (Modern UI with High Contrast & UI Fixes) ---
 st.markdown("""
     <style>
-    /* Main Background and Global Text Contrast */
+    /* Main Background */
     .main { background-color: #f8fafc; }
-    .stMarkdown p, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
-        color: #0f172a !important; /* Deep Slate for readability */
+    
+    /* Main Content Text Contrast */
+    .main .stMarkdown p, .main .stMarkdown h1, .main .stMarkdown h2, .main .stMarkdown h3 {
+        color: #0f172a !important; 
     }
     
+    /* HIDE STREAMLIT HEADER ANCHOR LINKS (Chain symbol) */
+    .stMarkdown h1 a, .stMarkdown h2 a, .stMarkdown h3 a, .stMarkdown h4 a {
+        display: none !important;
+    }
+
     /* Sidebar Styling */
     [data-testid="stSidebar"] {
         background-color: #003c71; /* Uludağ Navy */
-        color: white;
     }
     
+    /* Sidebar Text Color Fix */
+    [data-testid="stSidebar"] .stMarkdown p, 
+    [data-testid="stSidebar"] .stMarkdown h1, 
+    [data-testid="stSidebar"] .stMarkdown h2, 
+    [data-testid="stSidebar"] .stMarkdown h3,
+    [data-testid="stSidebar"] label {
+        color: #ffffff !important;
+    }
+
     /* HIDE THE OLD RADIO CIRCLES */
     [data-testid="stSidebarUserContent"] .stRadio div[role="radiogroup"] > label > div:first-child {
         display: none !important;
@@ -63,11 +79,10 @@ st.markdown("""
         background-color: #ffffff;
         padding: 24px;
         border-radius: 20px;
-        border: 1px solid #94a3b8; /* Darker border for definition */
+        border: 1px solid #94a3b8;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
     
-    /* Metric Label (High Contrast Navy) */
     [data-testid="stMetricLabel"] p {
         color: #003c71 !important;
         font-weight: 800 !important;
@@ -76,7 +91,6 @@ st.markdown("""
         letter-spacing: 0.5px;
     }
     
-    /* Metric Value (Pure Black) */
     [data-testid="stMetricValue"] div {
         color: #000000 !important;
         font-weight: 900 !important;
@@ -93,10 +107,18 @@ st.markdown("""
         color: #1e293b;
     }
 
-    /* Slider Labels Color Fix */
-    .stSlider label, .stSlider div {
-        color: #ffffff !important;
-        font-weight: 600;
+    /* Student Info Box in Sidebar */
+    .student-info {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 15px;
+        border-radius: 12px;
+        margin-top: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .student-info p {
+        margin: 0;
+        font-size: 0.75rem;
+        color: rgba(255, 255, 255, 0.8) !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -105,18 +127,18 @@ st.markdown("""
 with st.sidebar:
     st.markdown("""<div style='text-align: center; padding: 20px 0;'>
         <h2 style='color: white; margin-bottom: 0; font-weight: 900; letter-spacing: -1px;'>BUÜ</h2>
-        <p style='color: rgba(255,255,255,0.7); font-size: 0.75rem; font-weight: 700; text-transform: uppercase;'>Mühendislik Fakültesi</p>
+        <p style='color: white; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; opacity: 0.9;'>Mühendislik Fakültesi</p>
     </div>""", unsafe_allow_html=True)
     
     st.markdown("<br>", unsafe_allow_html=True)
     
     page = st.radio(
         "NAVIGATION",
-        ["SİMÜLASYON PANELİ", "TEORİK ARKA PLAN"],
+        ["SİMÜLASYON PANELİ", "AKADEMİK ARKA PLAN"],
         label_visibility="collapsed"
     )
     
-    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
     
     if page == "SİMÜLASYON PANELİ":
         st.markdown("<p style='font-size: 0.8rem; font-weight: 800; color: #ffffff; text-transform: uppercase; margin-bottom: 10px;'>İşletme Kontrolleri</p>", unsafe_allow_html=True)
@@ -124,13 +146,21 @@ with st.sidebar:
         nh4_inf = st.slider("Giriş NH4-N", 20.0, 100.0, 50.0, step=1.0)
         st.markdown("<div style='background: rgba(255,255,255,0.15); padding: 12px; border-radius: 8px; font-size: 0.75rem; color: #ffffff;'>Kış geçişi 15. günde simüle edilir (20°C → 10°C).</div>", unsafe_allow_html=True)
 
+    # --- STUDENT INFORMATION BLOCK ---
+    st.markdown("""
+        <div class='student-info'>
+            <p><b>AD SOYAD:</b> [Adınız Soyadınız]</p>
+            <p><b>ÖĞRENCİ NO:</b> [Öğrenci Numaranız]</p>
+            <p><b>DERS:</b> [Ders İsmi / CEV4079]</p>
+        </div>
+    """, unsafe_allow_html=True)
+
 # --- 5. PAGE ROUTING ---
 
 if page == "SİMÜLASYON PANELİ":
     st.markdown("<h2 style='color: #0f172a; font-weight: 900;'>Bardenpho Dinamik Analiz</h2>", unsafe_allow_html=True)
     
     with st.spinner('Hesaplanıyor...'):
-        # Using the imported function from engine.py
         data = run_simulation(srt_val, Inf_NH4=nh4_inf)
 
     # High-Contrast Metrics
@@ -178,7 +208,7 @@ else:
             <h4 style='color: #0f172a; font-weight: 700;'>Ototrof Washout (Yıkanma) Fenomeni</h4>
             <p>Biyolojik azot giderimi, amonyağı nitrata dönüştüren ototrof nitrifikasyon bakterilerinin varlığına doğrudan bağımlıdır. 
             Bu bakteriler, sıcaklık değişimlerine karşı heterotrof popülasyona oranla çok daha duyarlıdır. 
-            Arrhenius denklemi uyarınca ($\theta = 1.072$), su sıcaklığı 20°C'den 10°C'ye düşünde nitrifikasyon hızı <b>yaklaşık %50 oranında</b> azalır.</p>
+            Arrhenius denklemi uyarınca ($\theta = 1.072$), su sıcaklığı 20°C'den 10°C'ye düştüğünde nitrifikasyon hızı <b>yaklaşık %50 oranında</b> azalır.</p>
             <p><b>Washout:</b> Eğer sistemde tutulan bakteri miktarı (Çamur Yaşı - SRT), bakterilerin yavaşlayan üreme hızından (Growth Rate) daha hızlı sistemden atılıyorsa, popülasyon sistemden fiziksel olarak "yıkanır". 
             Bu durum, amonyak konsantrasyonunun kontrolsüz bir şekilde yükselmesiyle sonuçlanır.</p>
 
