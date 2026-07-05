@@ -42,10 +42,10 @@ else:
 # --- GRAFİK ---
 fig = make_subplots(specs=[[{"secondary_y": True}]])
 
-# Bölgeleri Belirten Arka Plan Renklendirmeleri (Yaz, Geçiş, Kış)
-fig.add_vrect(x0=0, x1=5, fillcolor="lightgreen", opacity=0.1, layer="below", line_width=0, annotation_text="Yaz (20°C)", annotation_position="top left")
-fig.add_vrect(x0=5, x1=30, fillcolor="lightblue", opacity=0.15, layer="below", line_width=0, annotation_text="Doğal Soğuma Geçişi", annotation_position="top left")
-fig.add_vrect(x0=30, x1=40, fillcolor="lightgrey", opacity=0.3, layer="below", line_width=0, annotation_text="Kış (10°C)", annotation_position="top left")
+# Bölgeleri Belirten Arka Plan Renklendirmeleri
+fig.add_vrect(x0=0, x1=5, fillcolor="green", opacity=0.08, line_width=0, annotation_text="Yaz (20°C)", annotation_position="top left")
+fig.add_vrect(x0=5, x1=30, fillcolor="royalblue", opacity=0.1, line_width=0, annotation_text="Geçiş Bölgesi", annotation_position="top left")
+fig.add_vrect(x0=30, x1=40, fillcolor="gray", opacity=0.15, line_width=0, annotation_text="Kış (10°C)", annotation_position="top left")
 
 # Sıcaklık Eğrisi
 fig.add_trace(go.Scatter(
