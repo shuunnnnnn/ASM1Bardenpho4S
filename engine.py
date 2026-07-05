@@ -133,7 +133,7 @@ def run_simulation(srt_val, inf_nh4_val):
     Streamlit arayüzünden gelen girdileri alır, simülasyonu çalıştırır ve 
     Pandas DataFrame'ine uygun matrisi döndürür.
     """
-    dt, days = 0.005, 40 
+    dt, days = 0.005, 60 
     Q_in = 1000.0
     Inf_S_val = 300.0
     
